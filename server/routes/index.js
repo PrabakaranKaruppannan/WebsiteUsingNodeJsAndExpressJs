@@ -1,16 +1,34 @@
 const express = require('express');
+
 const router = express.Router();
 
-const speakersRoutes = require('./speakers');
-const feedbackRoutes =  require('./feeback');
+const speakersRoute = require('./speakers');
+const feedbackRoute = require('./feedback');
 
-module.exports = () => {
-    router.get('/', (request, response, next) => {
-        response.render('index');
-    });
+module.exports = (param) => {
     
-    router.use('/speakers', speakersRoutes());
-    router.use('/feedback', feedbackRoutes());
+    const { speakerService } = param;
 
+    router.get('/', async (req, res, next) => {
+        try {
+            const promises = [];
+            promises.push(speakerService.getListShort());
+            promises.push(speakerService.getAllArtwork());
+    
+            const results = await Promise.all(promises);
+    
+            return res.render('index', {
+                page: 'Home',
+                speakerslist: results[0],
+                artwork: results[1],
+            });
+        } catch(err) {
+            return next(err);
+        }
+    });
+
+    router.use('/speakers', speakersRoute(param));
+    router.use('/feedback', feedbackRoute(param));
+    
     return router;
-}
+};
